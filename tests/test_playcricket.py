@@ -11,7 +11,6 @@ from playcric.utils import u
 
 TESTDATA_DIR = os.path.join(os.path.dirname(__file__), 'test_files')
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -449,7 +448,14 @@ class TestPlayCricket(unittest.TestCase):
         expected_df = pd.read_pickle(
             os.path.join(TESTDATA_DIR, 'get_innings_total_scores.pkl'))
         df = self.pc_instance.get_innings_total_scores(match_id)
-        pd.testing.assert_frame_equal(df, expected_df)
+
+        # expected_df is a pickled dataframe which stores strings as a different
+        # underlying dtype than the JSON-loaded df. 
+        # To avoid false negatives, we cast expected_df to the same dtypes as df before asserting equality.
+        expected_df = expected_df.astype(df.dtypes)
+        expected_df.columns = expected_df.columns.astype(df.columns.dtype)
+
+        pd.testing.assert_frame_equal(df, expected_df, check_dtype=False)
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 """
 Generic configuration constants for the Play-Cricket API wrapper.
 
-Club-specific constants (team IDs, banned words, etc.) live in alleyn_config.py.
+Club-specific constants (team IDs, banned words, etc.) live in the config yaml file.
 """
 
 # --- API URL templates ---

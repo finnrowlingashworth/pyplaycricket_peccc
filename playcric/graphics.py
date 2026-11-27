@@ -1,5 +1,5 @@
 from playcric.playcricket import pc
-from playcric import config, alleyn_config
+from playcric import config
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -7,51 +7,48 @@ import logging
 from typing import Optional
 
 
-class acc(pc):
+class gr(pc):
     """
-    Alleyn Cricket Club-specific subclass of the Play-Cricket wrapper.
-
-    Extends ``pc`` with display and formatting methods tailored to Alleyn CC's
+    Extends ``pc`` with display and formatting methods tailored for use with a
     graphics pipeline.  Club-specific constants (team IDs, banned words, etc.)
-    are loaded from ``alleyn_config``.
+    are loaded from a yaml configuration file or can be passed directly.
     """
 
     def __init__(
         self,
         api_key: str,
         site_id: int,
+        config_file: Optional[str] = None,
         team_names: Optional[list] = None,
         team_name_to_ids_lookup: Optional[dict] = None,
         cache: bool = True,
     ):
         """
-        Initialise the Alleyn CC client.
+        Initialise the gr client.
 
         Args:
             api_key (str): Play-Cricket API token.
             site_id (str): Play-Cricket site ID.
-            team_names (list, optional): Club team name strings.
-                Defaults to ``alleyn_config.TEAM_NAMES``.
-            team_name_to_ids_lookup (dict, optional): Team name → ID mapping.
-                Defaults to ``alleyn_config.TEAM_NAME_TO_IDS_LOOKUP``.
+            config_file (str, optional): Path to a yaml config file.
+            team_names (list, optional): List of team names, will overwrite the config
+            team_name_to_ids_lookup (dict, optional): Mapping of team names to IDs, will overwrite the config
             cache (bool, optional): Cache API responses in memory for the
                 lifetime of this instance. Defaults to True.
         """
-        if team_names is None:
-            team_names = alleyn_config.TEAM_NAMES
-        if team_name_to_ids_lookup is None:
-            team_name_to_ids_lookup = alleyn_config.TEAM_NAME_TO_IDS_LOOKUP
 
         super().__init__(
-            api_key=api_key, site_id=site_id,
+            api_key=api_key, 
+            site_id=site_id,
+            config_file=config_file,
             team_names=team_names,
             team_name_to_ids_lookup=team_name_to_ids_lookup,
             cache=cache,
         )
-        self.logger = logging.getLogger('pyplaycricket.alleyn')
+
+        self.logger = logging.getLogger('pyplaycricket.graphics')
         # Set club-specific name-cleaning constants used by _clean_team_name in u.
-        self.team_name_banned_words = alleyn_config.TEAM_NAME_BANNED_WORDS
-        self.n_team_swap = alleyn_config.N_TEAM_SWAP
+        self.team_name_banned_words = self.config['team_name_banned_words'] if self.config['team_name_banned_words'] is not None else []
+        self.n_team_swap = self.config['n_team_swap'] if self.config['n_team_swap'] is not None else []
 
     # ------------------------------------------------------------------
     # Innings / scores
@@ -253,9 +250,11 @@ class acc(pc):
         Returns:
             pd.DataFrame: Weekend matches ordered for display.
         """
+
         matches = matches.loc[
             matches['match_date'].isin([saturday, saturday + timedelta(days=1)])
         ].copy()
+
         return self.order_matches_for_the_graphics(matches=matches)
 
     # ------------------------------------------------------------------
@@ -335,7 +334,7 @@ class acc(pc):
     # Season stat totals
     # ------------------------------------------------------------------
 
-    def get_alleyn_season_totals(
+    def get_team_season_totals(
         self,
         match_ids: list,
         team_ids: Optional[list] = None,
@@ -344,7 +343,7 @@ class acc(pc):
         n_players: int = 10,
     ):
         """
-        Calculate season batting, bowling, and fielding totals for Alleyn CC teams.
+        Calculate season batting, bowling, and fielding totals for a team.
 
         A thin wrapper around ``pc.get_stat_totals`` that defaults ``team_ids``
         to the club's registered team IDs.

@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import re
 from typing import Optional
+from yaml import safe_load, YAMLError
 from playcric import config
 from playcric.utils import u
 
@@ -15,12 +16,13 @@ class pc(u):
     and innings data from the Play-Cricket API (play-cricket.com/api/v2).
 
     Inherits private helpers from ``u`` (utils).  Club-specific display logic
-    lives in the ``acc`` subclass.
+    lives in the ``graphics`` subclass.
 
     Args:
         api_key (str): Play-Cricket API token.
         site_id (int): Default site ID used when none is passed to a method.
-        team_names (list): Human-readable team names for this club.
+        config_file (str, optional): Path to a yaml config file.
+        team_names (list, optional): Human-readable team names for this club.
         team_name_to_ids_lookup (dict): Mapping of team name → Play-Cricket team ID.
         cache (bool): Cache API responses in memory for the lifetime of this
             instance, so methods sharing an endpoint only request it once.
@@ -31,6 +33,7 @@ class pc(u):
         self,
         api_key: str,
         site_id: int,
+        config_file: Optional[str] = None,
         team_names: Optional[list] = None,
         team_name_to_ids_lookup: Optional[dict] = None,
         cache: bool = True,
@@ -40,14 +43,44 @@ class pc(u):
         self.logger = logging.getLogger('pyplaycricket.playcricket')
         self.logger.info(f'Setting site_id as {site_id}')
         self.site_id = site_id
-        self.team_names = team_names if team_names is not None else []
-        self.team_name_to_ids_lookup = (
-            team_name_to_ids_lookup if team_name_to_ids_lookup is not None else {}
-        )
-        self.team_ids = list(self.team_name_to_ids_lookup.values())
-        self.team_ids_to_names_lookup = {
-            v: k for k, v in self.team_name_to_ids_lookup.items()
-        }
+        self.config = None
+
+        if config_file is not None:
+            with open(config_file, 'r') as f:
+                try:
+                    self.config = safe_load(f)
+                except YAMLError as e:
+                    self.logger.error(f'Error loading config file: {e}')
+                    self.config = None
+                else:
+                    self.logger.info(f'Loaded config file: {config_file}')
+
+        if self.config is not None:
+            if team_names is not None:
+                self.team_names = team_names if team_names is not None else []
+            else:
+                self.team_names = self.config['team_names'] if 'team_names' in self.config else []
+
+            if team_name_to_ids_lookup is not None:
+                self.team_name_to_ids_lookup = team_name_to_ids_lookup if team_name_to_ids_lookup is not None else {}
+            else:
+                self.team_name_to_ids_lookup = (
+                    self.config['team_name_to_ids_lookup'] if 'team_name_to_ids_lookup' in self.config else {}
+                )
+            
+            self.team_ids = list(self.team_name_to_ids_lookup.values())
+            self.team_ids_to_names_lookup = {
+                v: k for k, v in self.team_name_to_ids_lookup.items()
+            }
+        else:
+            self.team_names = team_names if team_names is not None else []
+            self.team_name_to_ids_lookup = (
+                team_name_to_ids_lookup if team_name_to_ids_lookup is not None else {}
+            )
+            self.team_ids = list(self.team_name_to_ids_lookup.values())
+            self.team_ids_to_names_lookup = {
+                v: k for k, v in self.team_name_to_ids_lookup.items()
+            }
 
     # ------------------------------------------------------------------
     # Players
