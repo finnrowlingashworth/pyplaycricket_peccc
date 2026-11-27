@@ -1,0 +1,22 @@
+# Club-specific configuration constants for Alleyn Cricket Club.
+
+team_name_ids_to_lookup:
+    '1s': 59723
+    '2s': 59724
+    '3s': 241803
+    '4s': 267647
+    '5s': 394397
+    '6s': 423876
+    'Barbarians': 279276
+    'Badgers': 268144
+    'Honey Badgers': 368707
+    'Friendly': 320697
+
+team_names: ['Brixton Barbarians', 'Alleyn CC']
+
+# Words and suffixes stripped from opposition team names before display.
+team_name_banned_words: [', Surrey', 'CC - ', ' XI', 'Saturday', 'Sunday', 'Sat', 'Sun', ' CC', ', Kent', '(Kent)']
+
+# Ordinal suffixes that are replaced with a plain 's' in team names
+# (e.g. "1st XI" → "1s").
+n_team_swap : ['st XI', 'nd XI', 'rd XI', 'th XI']

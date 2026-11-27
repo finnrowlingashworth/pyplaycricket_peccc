@@ -1,0 +1,14 @@
+# Club-specific configuration constants for Plumpton and East Chiltington Cricket Club.
+
+team_name_ids_to_lookup:
+  '1s': 42112
+  '2s': 42113
+
+team_names: ['Plumpton & East Chiltington CC']
+
+# Words and suffixes stripped from opposition team names before display.
+team_name_banned_words: ['CC - ', ' XI', 'Saturday', 'Sunday', 'Sat', 'Sun', ' CC']
+
+# Ordinal suffixes that are replaced with a plain 's' in team names
+# (e.g. "1st XI" → "1s").
+n_team_swap: ['st XI', 'nd XI', 'rd XI', 'th XI']

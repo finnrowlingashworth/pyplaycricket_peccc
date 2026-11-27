@@ -24,7 +24,7 @@
   - [get_individual_stats_from_all_games](#get_individual_stats_from_all_games)
   - [get_stat_totals](#get_stat_totals)
   - [check_cap_limit_breaches](#check_cap_limit_breaches)
-- [Alleyn CC Subclass — `acc`](#alleyn-cc-subclass--acc)
+- [Graphics Subclass — `gr`](#graphics-subclass--gr)
 - [Finding IDs](#finding-ids)
 - [Development](#development)
 - [License](#license)
@@ -57,11 +57,10 @@ Once approved, you will receive your **site ID** and **API key**.
 |---|---|
 | `playcric.playcricket` | Main public API class (`pc`). All generic data-retrieval methods live here. |
 | `playcric.utils` | Base class (`u`). Private helper methods shared across the class hierarchy. |
-| `playcric.alleyn` | Alleyn CC-specific subclass (`acc`). Formatting methods for the club's graphics pipeline. |
+| `playcric.graphics` | Graphics subclass (`gr`). Formatting methods for the club's graphics pipeline. |
 | `playcric.config` | Generic API constants: URL templates, result codes, column schemas. |
-| `playcric.alleyn_config` | Alleyn CC-specific constants: team IDs, name-cleaning rules. |
 
-The class hierarchy is `u → pc → acc`. External users should instantiate `pc` (or `acc` for Alleyn CC-specific features).
+The class hierarchy is `u → pc → gr`. External users should instantiate `pc` or `gr` for graphics specific features.
 
 ---
 
@@ -409,17 +408,17 @@ breaches = playc.check_cap_limit_breaches(
 
 ---
 
-## Alleyn CC Subclass — `acc`
+## Graphics subclass — `gr`
 
-The `acc` class extends `pc` with display and formatting methods for Alleyn CC's social media and graphics pipeline. It pre-loads Alleyn-specific team IDs and name-cleaning rules from `alleyn_config`.
+The `gr` class extends `pc` with display and formatting methods for a club's social media and graphics pipeline. It pre-loads club specific team IDs and name-cleaning rules from a config yaml file passed into the object.
 
 ```python
-from playcric.alleyn import acc
+from playcric.graphics import gr
 
-alleyn = acc(api_key='your_api_key', site_id=your_site_id)
+my_club_graphics = gr(api_key='your_api_key', site_id='your_site_id', config_file='my_config.yaml')
 ```
 
-`acc` inherits all `pc` methods and adds the following:
+`gr` inherits all `pc` methods and adds the following:
 
 | Method | Returns | Description |
 |---|---|---|
@@ -430,8 +429,8 @@ alleyn = acc(api_key='your_api_key', site_id=your_site_id)
 | `get_weekend_matches(matches, saturday)` | `pd.DataFrame` | Filter a matches DataFrame to a specific weekend |
 | `get_season_opposition_list(matches)` | `str` | Newline-joined opposition team names for the season |
 | `get_cutout_off_league_table(league_table, n_teams)` | `str` | Fixed-width table slice centred on the club |
-| `get_alleyn_season_totals(match_ids, ...)` | `tuple` | Wrapper around `get_stat_totals` defaulting `team_ids` to Alleyn's registered teams |
-| `get_all_team_players_involved(match_ids, team_ids)` | `pd.DataFrame` | Wrapper around `get_all_players_involved` defaulting to Alleyn's teams |
+| `get_team_season_totals(match_ids, ...)` | `tuple` | Wrapper around `get_stat_totals` defaulting `team_ids` to the registered teams |
+| `get_all_team_players_involved(match_ids, team_ids)` | `pd.DataFrame` | Wrapper around `get_all_players_involved` defaulting to the club's teams defined in the config |
 
 ---
 

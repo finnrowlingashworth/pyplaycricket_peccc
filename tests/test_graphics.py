@@ -1,16 +1,17 @@
 import unittest
 from unittest.mock import patch
-from playcric.alleyn import acc
+from playcric.graphics import gr
 from playcric.playcricket import pc
 import pandas as pd
-from datetime import date
+from datetime import datetime
+import os
+from tests.test_playcricket import TESTDATA_DIR
 
-
-class TestAlleyn(unittest.TestCase):
+class TestGraphics(unittest.TestCase):
     def setUp(self):
         self.api_key = 'your_api_key'
         self.site_id = 'your_site_id'
-        self.acc_instance = acc(self.api_key, self.site_id)
+        self.acc_instance = gr(self.api_key, self.site_id, config_file=os.path.join(TESTDATA_DIR, 'test_config.yaml'))
 
     def test_get_innings_scores(self):
         match_ids = [1, 2, 3]
@@ -46,7 +47,7 @@ class TestAlleyn(unittest.TestCase):
     def test_make_sure_number_of_players_is_consistent(self):
         api_key = 'your_api_key'
         site_id = 'your_site_id'
-        acc_instance = acc(api_key, site_id)
+        acc_instance = gr(api_key, site_id, config_file=os.path.join(TESTDATA_DIR, 'test_config.yaml'))
 
         names_list = ['John', 'Alice']
         stats_list = ['100', '50']
@@ -130,7 +131,7 @@ class TestAlleyn(unittest.TestCase):
         self.assertEqual(ordered_matches.to_dict(), expected_order.to_dict())
 
     def test_get_weekend_matches(self):
-        saturday = date(2022, 1, 1)
+        saturday = datetime(2022, 1, 1)
         matches = pd.DataFrame({
             'match_date': ['2022-01-01', '2022-01-02', '2022-01-03'],
             'home_team_id': [1, 2, 3],
@@ -138,6 +139,7 @@ class TestAlleyn(unittest.TestCase):
             'home_club_name': ['Team A', 'Team B', 'Team C'],
             'away_club_name': ['Team D', 'Team E', 'Team F']
         })
+
         matches['match_date'] = pd.to_datetime(matches['match_date'])
 
         expected_matches = pd.DataFrame({
@@ -145,11 +147,11 @@ class TestAlleyn(unittest.TestCase):
             'home_team_id': [1, 2],
             'away_team_id': [4, 5],
             'home_club_name': ['Team A', 'Team B'],
-            'away_club_name': ['Team D', 'Team E'], 'club_team_name': [None, None]
+            'away_club_name': ['Team D', 'Team E'], 
+            'club_team_name': [None, None]
         })
 
-        expected_matches['match_date'] = pd.to_datetime(
-            expected_matches['match_date'])
+        expected_matches['match_date'] = pd.to_datetime(expected_matches['match_date'])
 
         weekend_matches = self.acc_instance.get_weekend_matches(
             matches, saturday)
@@ -273,7 +275,7 @@ class TestAlleyn(unittest.TestCase):
             'dismissals': [2, 1],
             'n_games': [2, 1]
         })
-        batting, bowling, fielding = self.acc_instance.get_alleyn_season_totals(
+        batting, bowling, fielding = self.acc_instance.get_team_season_totals(
             match_ids=match_ids, team_ids=team_ids, group_by_team=group_by_team, for_graphics=for_graphics, n_players=n_players)
 
         # batting['runs'] = batting['runs'].astype('float')
@@ -376,7 +378,7 @@ class TestAlleyn(unittest.TestCase):
 
         self.assertEqual(result_df['title'].tolist(), expected_title)
 
-    @patch.object(acc, 'get_individual_stats')
+    @patch.object(gr, 'get_individual_stats')
     def test_get_individual_stats_from_all_games(self, mock_get_individual_stats):
         match_ids = [1, 2, 3]
         team_ids = [1, 2, 3]
