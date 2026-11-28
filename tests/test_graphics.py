@@ -60,6 +60,77 @@ class TestGraphics(unittest.TestCase):
         self.assertEqual(actual_names_list, expected_names_list)
         self.assertEqual(actual_stats_list, expected_stats_list)
 
+    def test_add_to_stats_dict(self):
+        api_key = 'your_api_key'
+        site_id = 'your_site_id'
+        acc_instance = gr(api_key, site_id, config_file=os.path.join(TESTDATA_DIR, 'test_config.yaml'))
+
+        stats_summary = {
+            "first_innings" : { "batters" : [], "bowlers" : [] }, 
+            "second_innings": { "batters" : [], "bowlers" : [] }
+        }
+
+        names_list = ['John', 'Alice']
+        stats_list = ['100(98)', '50(48)']
+        innings_key = "first_innings"
+        type_of_stat = "batters"
+
+        expected_stats_summary = {
+            "first_innings" : { "batters" : [{'name' : 'John', 'stats' : '100(98)'} , {'name' : 'Alice', 'stats' : '50(48)'}], "bowlers" : [] }, 
+            "second_innings": { "batters" : [], "bowlers" : [] }
+        }
+
+        stats_summary = acc_instance._add_to_stats_dict(stats_summary, names_list, stats_list, innings_key, type_of_stat)
+
+        self.assertEqual(stats_summary, expected_stats_summary)
+
+        names_list = ['Bob', 'Megan']
+        stats_list = ['2-43', '3-35']
+        innings_key = "first_innings"
+        type_of_stat = "bowlers"
+
+        stats_summary = acc_instance._add_to_stats_dict(stats_summary, names_list, stats_list, innings_key, type_of_stat)
+
+        expected_stats_summary = {
+            "first_innings" : { "batters" : [{'name' : 'John', 'stats' : '100(98)'} , {'name' : 'Alice', 'stats' : '50(48)'}], 
+                                "bowlers" : [{'name' : 'Bob', 'stats' : '2-43'} , {'name' : 'Megan', 'stats' : '3-35'}] }, 
+            "second_innings": { "batters" : [], "bowlers" : [] }
+        }
+
+        self.assertEqual(stats_summary, expected_stats_summary)
+
+        names_list = ['Chris', 'Daisy']
+        stats_list = ['20(18)', '41(67)']
+        innings_key = "second_innings"
+        type_of_stat = "batters"
+
+        stats_summary = acc_instance._add_to_stats_dict(stats_summary, names_list, stats_list, innings_key, type_of_stat)
+
+        expected_stats_summary = {
+            "first_innings" : { "batters" : [{'name' : 'John', 'stats' : '100(98)'} , {'name' : 'Alice', 'stats' : '50(48)'}], 
+                                "bowlers" : [{'name' : 'Bob', 'stats' : '2-43'} , {'name' : 'Megan', 'stats' : '3-35'}] }, 
+            "second_innings": { "batters" : [{'name' : 'Chris', 'stats' : '20(18)'} , {'name' : 'Daisy', 'stats' : '41(67)'}], 
+                                "bowlers" : [] }
+        }
+
+        self.assertEqual(stats_summary, expected_stats_summary)
+
+        names_list = ['Mike', 'Sarah']
+        stats_list = ['1-30', '2-12']
+        innings_key = "second_innings"
+        type_of_stat = "bowlers"
+
+        stats_summary = acc_instance._add_to_stats_dict(stats_summary, names_list, stats_list, innings_key, type_of_stat)
+
+        expected_stats_summary = {
+            "first_innings" : { "batters" : [{'name' : 'John', 'stats' : '100(98)'} , {'name' : 'Alice', 'stats' : '50(48)'}], 
+                                "bowlers" : [{'name' : 'Bob', 'stats' : '2-43'} , {'name' : 'Megan', 'stats' : '3-35'}] }, 
+            "second_innings": { "batters" : [{'name' : 'Chris', 'stats' : '20(18)'} , {'name' : 'Daisy', 'stats' : '41(67)'}], 
+                                "bowlers" : [{'name' : 'Mike', 'stats' : '1-30'} , {'name' : 'Sarah', 'stats' : '2-12'}] }
+        }
+
+        self.assertEqual(stats_summary, expected_stats_summary)
+
     def test_get_result_description_and_margin(self):
         match_ids = [1]
         team_ids = [1, 10, 3]

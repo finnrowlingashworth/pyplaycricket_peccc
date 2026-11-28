@@ -5,6 +5,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import logging
 from typing import Optional
+import json
 
 
 class gr(pc):
@@ -144,6 +145,100 @@ class gr(pc):
 
         return stats_summary
 
+    def get_individual_performances_for_graphic_json(
+            self, match_ids: Optional[list] = None, players_to_include: int = 3
+        ):
+        """
+        Build a json string of top batting and bowling
+        performances per innings, suitable for the graphics pipeline.
+
+        Args:
+            match_ids (list, optional): Match IDs to process.
+            players_to_include (int): Number of players to show per innings half.
+
+        Returns:
+            str: Formatted json string
+
+            "first_innings": {
+                "batters": [
+                    {"name": "D FRIEL", "stat": "37[73]"},
+                    {"name": "J HAY", "stat": "29[58]"},
+                    {"name": "E ROUSEN", "stat": "28[36]"},
+                ],
+                "bowlers": [
+                    {"name": "R GEORGE", "stat": "4-26"},
+                    {"name": "M POOLE", "stat": "2-29"},
+                    {"name": "M RILEY", "stat": "1-41"},
+                ]
+            },
+            "second_innings": {
+                "batters": [
+                    {"name": "T EADON", "stat": "26[23]"},
+                    {"name": "J MCGROARTY", "stat": "17[29]"},
+                    {"name": "J WALMSLEY", "stat": "15[13]"},
+                ],
+                "bowlers": [
+                    {"name": "N DAVIS", "stat": "2-19"},
+                    {"name": "L EDWARDS", "stat": "2-22"},
+                    {"name": "C HOBBIS", "stat": "1-13"},
+                ]
+            }
+
+        """
+
+        if match_ids is None:
+            match_ids = []
+
+        stats_summary = {"first_innings" : { "batters" : [], "bowlers" : [] }, 
+                         "second_innings": { "batters" : [], "bowlers" : [] }}
+        
+        for match_id in match_ids:
+            self.logger.info(f'Processing match_id: {match_id}')
+            bat, bowl = self.get_individual_stats(
+                match_id=match_id, stat_string=True)
+
+            for count, innings in enumerate(sorted(bat['innings'].unique().tolist())):
+
+                innings_key = ''
+                match count:
+                    case 0:
+                        innings_key = 'first_innings'
+                    case 1:
+                        innings_key = 'second_innings'
+                    case _:
+                        raise ValueError('This function only supports matches with 2 innings')
+                                  
+                batn = bat.loc[bat['innings'] == innings]
+                batn = batn.loc[batn['how_out'] != 'did not bat']
+                batn = batn.sort_values(
+                    ['runs', 'balls', 'not_out', 'position'],
+                    ascending=[False, True, False, True],
+                ).head(players_to_include)
+
+                batting_names = [i.upper() for i in batn['initial_name'].tolist()]
+                batting_stats = batn['stat'].tolist()
+                batting_names, batting_stats = self._make_sure_number_of_players_is_consistent(
+                    batting_names, batting_stats, players_to_include=players_to_include)
+                
+                stats_summary = self._add_to_stats_dict(
+                    stats_summary, batting_names, batting_stats, innings_key, "batters")
+
+                bowln = bowl.loc[bowl['innings'] == innings]
+                bowln = bowln.loc[bowln['wickets'] > 0]
+                bowln = bowln.sort_values(
+                    ['wickets', 'runs', 'overs'], ascending=[False, True, False],
+                ).head(players_to_include)
+
+                bowling_names = [i.upper() for i in bowln['initial_name'].tolist()]
+                bowling_stats = bowln['stat'].tolist()
+                bowling_names, bowling_stats = self._make_sure_number_of_players_is_consistent(
+                    bowling_names, bowling_stats, players_to_include=players_to_include)
+
+                stats_summary = self._add_to_stats_dict(
+                    stats_summary, bowling_names, bowling_stats, innings_key, "bowlers")
+
+        return stats_summary
+
     def _add_to_stats_string(
         self, stats_summary: str, names_list: list, stats_list: list, alternate: bool = True,
     ) -> str:
@@ -164,6 +259,27 @@ class gr(pc):
         else:
             for name, stat in zip(names_list, stats_list):
                 stats_summary += f"{name}\n{stat}\n"
+        return stats_summary
+
+    def _add_to_stats_dict(
+            self, stats_summary: dict, names_list: list, stats_list: list, innings_key: str, type_of_stat: str
+        ) -> str:
+        """
+        Append a block of names then stats to the running summary dict.
+
+        Args:
+            stats_summary (dict): Accumulated summary dict so far.
+            names_list (list): Player name strings to append.
+            stats_list (list): Corresponding stat strings to append.
+            innings_key (str) : first_innings or second_innings
+            type_of_stat(str) : batters or bowlers
+
+        Returns:
+            dict: Updated summary string.
+        """
+        for name, stat in zip(names_list, stats_list):
+            stats_summary[innings_key][type_of_stat].append({"name" : name, "stats" : stat})
+
         return stats_summary
 
     def _make_sure_number_of_players_is_consistent(
