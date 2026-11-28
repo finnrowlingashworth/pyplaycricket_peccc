@@ -145,11 +145,11 @@ class gr(pc):
 
         return stats_summary
 
-    def get_individual_performances_for_graphic_json(
+    def get_individual_performances_for_graphic_dict(
             self, match_ids: Optional[list] = None, players_to_include: int = 3
         ):
         """
-        Build a json string of top batting and bowling
+        Build a dict of top batting and bowling
         performances per innings, suitable for the graphics pipeline.
 
         Args:
@@ -157,9 +157,10 @@ class gr(pc):
             players_to_include (int): Number of players to show per innings half.
 
         Returns:
-            str: Formatted json string
+            dict: Formatted dict
 
-            "first_innings": {
+        match_id : {
+            "innings_1": {
                 "batters": [
                     {"name": "D FRIEL", "stat": "37[73]"},
                     {"name": "J HAY", "stat": "29[58]"},
@@ -171,7 +172,7 @@ class gr(pc):
                     {"name": "M RILEY", "stat": "1-41"},
                 ]
             },
-            "second_innings": {
+            "innings_2": {
                 "batters": [
                     {"name": "T EADON", "stat": "26[23]"},
                     {"name": "J MCGROARTY", "stat": "17[29]"},
@@ -183,31 +184,29 @@ class gr(pc):
                     {"name": "C HOBBIS", "stat": "1-13"},
                 ]
             }
+        }
 
         """
 
         if match_ids is None:
             match_ids = []
 
-        stats_summary = {"first_innings" : { "batters" : [], "bowlers" : [] }, 
-                         "second_innings": { "batters" : [], "bowlers" : [] }}
+        stats_summary = {}
         
         for match_id in match_ids:
+
+            stats_summary[match_id] = {}
+
             self.logger.info(f'Processing match_id: {match_id}')
             bat, bowl = self.get_individual_stats(
                 match_id=match_id, stat_string=True)
 
             for count, innings in enumerate(sorted(bat['innings'].unique().tolist())):
 
-                innings_key = ''
-                match count:
-                    case 0:
-                        innings_key = 'first_innings'
-                    case 1:
-                        innings_key = 'second_innings'
-                    case _:
-                        raise ValueError('This function only supports matches with 2 innings')
-                                  
+                innings_key = f"innings_{count + 1}"
+
+                stats_summary[match_id][innings_key] = { "batters" : [], "bowlers" : [] }
+
                 batn = bat.loc[bat['innings'] == innings]
                 batn = batn.loc[batn['how_out'] != 'did not bat']
                 batn = batn.sort_values(
