@@ -390,6 +390,52 @@ class gr(pc):
 
         return all_result_strings
 
+    def get_result_description_dict(self, match_ids: list, team_ids: list) -> str:
+        """
+        Build human-readable result lines for a set of matches.
+
+        Example output : {
+            match_id : ("1s", "Won by 47 runs")
+        }
+
+        Args:
+            match_ids (list): Match IDs to process.
+            team_ids (list): IDs of the club's teams (used to determine perspective).
+
+        Returns:
+            dict : Tuples of result strings, first part the team name, second part the result string
+        """
+        results = {}
+        for match_id in match_ids:
+            self.logger.info(f'Match ID: {match_id}')
+            data = self._make_api_request(
+                config.MATCH_DETAIL_URL.format(
+                    match_id=match_id, api_key=self.api_key))
+            data = data['match_details'][0]
+
+            team_name = (
+                data['home_team_name']
+                if int(data['home_team_id']) in team_ids
+                else data['away_team_name']
+            )
+            result_letter = self._get_result_letter(data=data, team_ids=team_ids)
+            result_string = config.RESULTS_TEXT.get(result_letter or '', '')
+
+            if result_letter == 'D':
+                result_string = 'Match drawn'
+            elif result_letter in config.NEUTRAL_RESULTS:
+                pass
+            elif data['batted_first'] == data['result_applied_to']:
+                n_runs = int(data['innings'][0]['runs']) - int(data['innings'][1]['runs'])
+                result_string += f' {n_runs} runs'
+            else:
+                n_wickets = 10 - int(data['innings'][1]['wickets'])
+                result_string += f' {n_wickets} wickets'
+
+            results[match_id] = (team_name, result_string)
+
+        return results
+
     # ------------------------------------------------------------------
     # Match filtering
     # ------------------------------------------------------------------

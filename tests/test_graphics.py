@@ -206,6 +206,44 @@ class TestGraphics(unittest.TestCase):
                 match_ids, team_ids)
             self.assertEqual(result_description_and_margin, expected_result)
 
+    def test_get_result_description_dict(self):
+        match_ids = [1]
+        team_ids = [1, 10, 3]
+        expected_result = {
+            1 : ("Team A", "Lost by 3 wickets")
+        }
+        with patch.object(self.acc_instance, '_make_api_request') as mock_make_api_request:
+            mock_make_api_request.return_value = {
+                'match_details': [
+                    {
+                        'result': 'W',
+                        'home_team_id': 1,
+                        'home_team_name': 'Team A',
+                        'away_team_id': 2,
+                        'away_team_name': 'Team B',
+                        'innings': [
+                            {
+                                'team_batting_name': 'Team A',
+                                'team_batting_id': 1,
+                                'runs': 100,
+                                'wickets': '8'
+                            },
+                            {
+                                'team_batting_name': 'Team B',
+                                'team_batting_id': 2,
+                                'runs': 101,
+                                'wickets': '7'
+                            }
+                        ],
+                        'result_applied_to': 2,
+                        'batted_first': 1
+                    }
+                ]
+            }
+            result_description = self.acc_instance.get_result_description_dict(
+                match_ids, team_ids)
+            self.assertEqual(result_description, expected_result)
+
     def test_add_to_stats_string_alternate(self):
         names_list = ['John', 'Alice']
         stats_list = ['100', '50']
