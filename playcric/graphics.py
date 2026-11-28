@@ -64,25 +64,17 @@ class gr(pc):
 
         Returns:
             tuple[str, str]: Newline-joined team names and score strings.
-        """
-        if match_ids is None:
-            match_ids = []
+        """       
 
         team_names = []
         innings_scores = []
 
-        for match_id in match_ids:
-            data = self._make_api_request(
-                config.MATCH_DETAIL_URL.format(
-                    match_id=match_id, api_key=self.api_key))
-            data = data['match_details'][0]
-            if data['result']:
-                for innings in data['innings']:
-                    team = self._clean_team_name(innings['team_batting_name'])
-                    team_names.append(team.strip())
+        innings_scores_dict = self.get_innings_scores_dict(match_ids)
 
-                    wickets = '' if innings['wickets'] == '10' else '-' + innings['wickets']
-                    innings_scores.append(f"{innings['runs']}{wickets}")
+        for m_innings_scores in innings_scores_dict.values():
+            for score in m_innings_scores.values():
+                team_names.append(score[0])
+                innings_scores.append(score[1])
 
         return '\n'.join(team_names), '\n'.join(innings_scores)
 
@@ -145,43 +137,21 @@ class gr(pc):
         Returns:
             str: Formatted summary string.
         """
-        if match_ids is None:
-            match_ids = []
 
-        stats_summary = ''
-        for match_id in match_ids:
-            self.logger.info(f'Processing match_id: {match_id}')
-            bat, bowl = self.get_individual_stats(
-                match_id=match_id, stat_string=True)
+        for match_performances in self.get_individual_performances_for_graphic_dict(
+            match_ids, players_to_include):
+            for innings in match_performances:
+                batting_names = [batter["name"] for batter in innings["batters"]]
+                batting_stats = [batter["stats"] for batter in innings["batters"]]
 
-            for innings in sorted(bat['innings'].unique().tolist()):
-                batn = bat.loc[bat['innings'] == innings]
-                batn = batn.loc[batn['how_out'] != 'did not bat']
-                batn = batn.sort_values(
-                    ['runs', 'balls', 'not_out', 'position'],
-                    ascending=[False, True, False, True],
-                ).head(players_to_include)
+                bowling_names = [bowler["name"] for bowler in innings["bowlers"]]
+                bowling_stats = [bowler["stats"] for bowler in innings["bowlers"]]
 
-                batting_names = [i.upper() for i in batn['initial_name'].tolist()]
-                batting_stats = batn['stat'].tolist()
-                batting_names, batting_stats = self._make_sure_number_of_players_is_consistent(
-                    batting_names, batting_stats, players_to_include=players_to_include)
                 stats_summary = self._add_to_stats_string(
-                    stats_summary, batting_names, batting_stats, alternate=alternate)
-
-                bowln = bowl.loc[bowl['innings'] == innings]
-                bowln = bowln.loc[bowln['wickets'] > 0]
-                bowln = bowln.sort_values(
-                    ['wickets', 'runs', 'overs'], ascending=[False, True, False],
-                ).head(players_to_include)
-
-                bowling_names = [i.upper() for i in bowln['initial_name'].tolist()]
-                bowling_stats = bowln['stat'].tolist()
-                bowling_names, bowling_stats = self._make_sure_number_of_players_is_consistent(
-                    bowling_names, bowling_stats, players_to_include=players_to_include)
+                                    stats_summary, batting_names, batting_stats, alternate=alternate)
                 stats_summary = self._add_to_stats_string(
-                    stats_summary, bowling_names, bowling_stats, alternate=alternate)
-
+                                    stats_summary, bowling_names, bowling_stats, alternate=alternate)
+            
         return stats_summary
 
     def get_individual_performances_for_graphic_dict(
@@ -191,40 +161,41 @@ class gr(pc):
         Build a dict of top batting and bowling
         performances per innings, suitable for the graphics pipeline.
 
+        Example output:
+
+        match_id : {
+            "innings_1": {
+                "batters": [
+                    {"name": "D FRIEL", "stats": "37[73]"},
+                    {"name": "J HAY", "stats": "29[58]"},
+                    {"name": "E ROUSEN", "stats": "28[36]"},
+                ],
+                "bowlers": [
+                    {"name": "R GEORGE", "stats": "4-26"},
+                    {"name": "M POOLE", "stats": "2-29"},
+                    {"name": "M RILEY", "stats": "1-41"},
+                ]
+            },
+            "innings_2": {
+                "batters": [
+                    {"name": "T EADON", "stats": "26[23]"},
+                    {"name": "J MCGROARTY", "stats": "17[29]"},
+                    {"name": "J WALMSLEY", "stats": "15[13]"},
+                ],
+                "bowlers": [
+                    {"name": "N DAVIS", "stats": "2-19"},
+                    {"name": "L EDWARDS", "stats": "2-22"},
+                    {"name": "C HOBBIS", "stats": "1-13"},
+                ]
+            }
+        }
+
         Args:
             match_ids (list, optional): Match IDs to process.
             players_to_include (int): Number of players to show per innings half.
 
         Returns:
             dict: Formatted dict
-
-        match_id : {
-            "innings_1": {
-                "batters": [
-                    {"name": "D FRIEL", "stat": "37[73]"},
-                    {"name": "J HAY", "stat": "29[58]"},
-                    {"name": "E ROUSEN", "stat": "28[36]"},
-                ],
-                "bowlers": [
-                    {"name": "R GEORGE", "stat": "4-26"},
-                    {"name": "M POOLE", "stat": "2-29"},
-                    {"name": "M RILEY", "stat": "1-41"},
-                ]
-            },
-            "innings_2": {
-                "batters": [
-                    {"name": "T EADON", "stat": "26[23]"},
-                    {"name": "J MCGROARTY", "stat": "17[29]"},
-                    {"name": "J WALMSLEY", "stat": "15[13]"},
-                ],
-                "bowlers": [
-                    {"name": "N DAVIS", "stat": "2-19"},
-                    {"name": "L EDWARDS", "stat": "2-22"},
-                    {"name": "C HOBBIS", "stat": "1-13"},
-                ]
-            }
-        }
-
         """
 
         if match_ids is None:
@@ -360,33 +331,8 @@ class gr(pc):
             str: Newline-terminated result strings concatenated together.
         """
         all_result_strings = ''
-        for match_id in match_ids:
-            self.logger.info(f'Match ID: {match_id}')
-            data = self._make_api_request(
-                config.MATCH_DETAIL_URL.format(
-                    match_id=match_id, api_key=self.api_key))
-            data = data['match_details'][0]
-
-            team_name = (
-                data['home_team_name']
-                if int(data['home_team_id']) in team_ids
-                else data['away_team_name']
-            )
-            result_letter = self._get_result_letter(data=data, team_ids=team_ids)
-            result_string = team_name + ' ' + config.RESULTS_TEXT.get(result_letter or '', '')
-
-            if result_letter == 'D':
-                result_string = 'Match drawn'
-            elif result_letter in config.NEUTRAL_RESULTS:
-                pass
-            elif data['batted_first'] == data['result_applied_to']:
-                n_runs = int(data['innings'][0]['runs']) - int(data['innings'][1]['runs'])
-                result_string += f' {n_runs} runs'
-            else:
-                n_wickets = 10 - int(data['innings'][1]['wickets'])
-                result_string += f' {n_wickets} wickets'
-
-            all_result_strings += result_string + '\n'
+        for match_result in self.get_result_description_dict(match_ids, team_ids).values():
+            all_result_strings += f"{match_result[0]} {match_result[1]}\n"
 
         return all_result_strings
 
