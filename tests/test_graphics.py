@@ -167,13 +167,23 @@ class TestGraphics(unittest.TestCase):
                 match_ids, team_ids)
             self.assertEqual(result_description_and_margin, expected_result)
 
-    def test_add_to_stats_string(self):
+    def test_add_to_stats_string_alternate(self):
         names_list = ['John', 'Alice']
         stats_list = ['100', '50']
         expected_stats_summary = 'John\nAlice\n100\n50\n'
 
         actual_stats_summary = self.acc_instance._add_to_stats_string(
-            '', names_list, stats_list)
+            '', names_list, stats_list, alternate=True)
+
+        self.assertEqual(actual_stats_summary, expected_stats_summary)
+
+    def test_add_to_stats_string_non_alternate(self):
+        names_list = ['John', 'Alice']
+        stats_list = ['100', '50']
+        expected_stats_summary = 'John\n100\nAlice\n50\n'
+
+        actual_stats_summary = self.acc_instance._add_to_stats_string(
+            '', names_list, stats_list, alternate=False)
 
         self.assertEqual(actual_stats_summary, expected_stats_summary)
 
