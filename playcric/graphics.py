@@ -220,7 +220,7 @@ class gr(pc):
                     batting_names, batting_stats, players_to_include=players_to_include)
                 
                 stats_summary = self._add_to_stats_dict(
-                    stats_summary, batting_names, batting_stats, innings_key, "batters")
+                    stats_summary, match_id, batting_names, batting_stats, innings_key, "batters")
 
                 bowln = bowl.loc[bowl['innings'] == innings]
                 bowln = bowln.loc[bowln['wickets'] > 0]
@@ -234,7 +234,7 @@ class gr(pc):
                     bowling_names, bowling_stats, players_to_include=players_to_include)
 
                 stats_summary = self._add_to_stats_dict(
-                    stats_summary, bowling_names, bowling_stats, innings_key, "bowlers")
+                    stats_summary, match_id, bowling_names, bowling_stats, innings_key, "bowlers")
 
         return stats_summary
 
@@ -261,13 +261,14 @@ class gr(pc):
         return stats_summary
 
     def _add_to_stats_dict(
-            self, stats_summary: dict, names_list: list, stats_list: list, innings_key: str, type_of_stat: str
+            self, stats_summary: dict, match_id: int, names_list: list, stats_list: list, innings_key: str, type_of_stat: str
         ) -> str:
         """
         Append a block of names then stats to the running summary dict.
 
         Args:
             stats_summary (dict): Accumulated summary dict so far.
+            match_id (int) : The match id these stats belong too
             names_list (list): Player name strings to append.
             stats_list (list): Corresponding stat strings to append.
             innings_key (str) : first_innings or second_innings
@@ -277,7 +278,7 @@ class gr(pc):
             dict: Updated summary string.
         """
         for name, stat in zip(names_list, stats_list):
-            stats_summary[innings_key][type_of_stat].append({"name" : name, "stats" : stat})
+            stats_summary[match_id][innings_key][type_of_stat].append({"name" : name, "stats" : stat})
 
         return stats_summary
 

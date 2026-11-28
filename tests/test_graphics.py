@@ -65,22 +65,23 @@ class TestGraphics(unittest.TestCase):
         site_id = 'your_site_id'
         acc_instance = gr(api_key, site_id, config_file=os.path.join(TESTDATA_DIR, 'test_config.yaml'))
 
-        stats_summary = {
+        match_id = 1000
+        stats_summary = { match_id : {
             "first_innings" : { "batters" : [], "bowlers" : [] }, 
             "second_innings": { "batters" : [], "bowlers" : [] }
-        }
+        } }
 
         names_list = ['John', 'Alice']
         stats_list = ['100(98)', '50(48)']
         innings_key = "first_innings"
         type_of_stat = "batters"
 
-        expected_stats_summary = {
+        expected_stats_summary = { match_id : {
             "first_innings" : { "batters" : [{'name' : 'John', 'stats' : '100(98)'} , {'name' : 'Alice', 'stats' : '50(48)'}], "bowlers" : [] }, 
             "second_innings": { "batters" : [], "bowlers" : [] }
-        }
+        } }
 
-        stats_summary = acc_instance._add_to_stats_dict(stats_summary, names_list, stats_list, innings_key, type_of_stat)
+        stats_summary = acc_instance._add_to_stats_dict(stats_summary, match_id, names_list, stats_list, innings_key, type_of_stat)
 
         self.assertEqual(stats_summary, expected_stats_summary)
 
@@ -89,13 +90,13 @@ class TestGraphics(unittest.TestCase):
         innings_key = "first_innings"
         type_of_stat = "bowlers"
 
-        stats_summary = acc_instance._add_to_stats_dict(stats_summary, names_list, stats_list, innings_key, type_of_stat)
+        stats_summary = acc_instance._add_to_stats_dict(stats_summary, match_id, names_list, stats_list, innings_key, type_of_stat)
 
-        expected_stats_summary = {
+        expected_stats_summary = { match_id : {
             "first_innings" : { "batters" : [{'name' : 'John', 'stats' : '100(98)'} , {'name' : 'Alice', 'stats' : '50(48)'}], 
                                 "bowlers" : [{'name' : 'Bob', 'stats' : '2-43'} , {'name' : 'Megan', 'stats' : '3-35'}] }, 
             "second_innings": { "batters" : [], "bowlers" : [] }
-        }
+        } }
 
         self.assertEqual(stats_summary, expected_stats_summary)
 
@@ -104,14 +105,14 @@ class TestGraphics(unittest.TestCase):
         innings_key = "second_innings"
         type_of_stat = "batters"
 
-        stats_summary = acc_instance._add_to_stats_dict(stats_summary, names_list, stats_list, innings_key, type_of_stat)
+        stats_summary = acc_instance._add_to_stats_dict(stats_summary, match_id, names_list, stats_list, innings_key, type_of_stat)
 
-        expected_stats_summary = {
+        expected_stats_summary = { match_id : {
             "first_innings" : { "batters" : [{'name' : 'John', 'stats' : '100(98)'} , {'name' : 'Alice', 'stats' : '50(48)'}], 
                                 "bowlers" : [{'name' : 'Bob', 'stats' : '2-43'} , {'name' : 'Megan', 'stats' : '3-35'}] }, 
             "second_innings": { "batters" : [{'name' : 'Chris', 'stats' : '20(18)'} , {'name' : 'Daisy', 'stats' : '41(67)'}], 
                                 "bowlers" : [] }
-        }
+        } }
 
         self.assertEqual(stats_summary, expected_stats_summary)
 
@@ -120,14 +121,14 @@ class TestGraphics(unittest.TestCase):
         innings_key = "second_innings"
         type_of_stat = "bowlers"
 
-        stats_summary = acc_instance._add_to_stats_dict(stats_summary, names_list, stats_list, innings_key, type_of_stat)
+        stats_summary = acc_instance._add_to_stats_dict(stats_summary, match_id, names_list, stats_list, innings_key, type_of_stat)
 
-        expected_stats_summary = {
+        expected_stats_summary = { match_id : {
             "first_innings" : { "batters" : [{'name' : 'John', 'stats' : '100(98)'} , {'name' : 'Alice', 'stats' : '50(48)'}], 
                                 "bowlers" : [{'name' : 'Bob', 'stats' : '2-43'} , {'name' : 'Megan', 'stats' : '3-35'}] }, 
             "second_innings": { "batters" : [{'name' : 'Chris', 'stats' : '20(18)'} , {'name' : 'Daisy', 'stats' : '41(67)'}], 
                                 "bowlers" : [{'name' : 'Mike', 'stats' : '1-30'} , {'name' : 'Sarah', 'stats' : '2-12'}] }
-        }
+        } }
 
         self.assertEqual(stats_summary, expected_stats_summary)
 
