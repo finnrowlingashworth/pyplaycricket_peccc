@@ -44,6 +44,44 @@ class TestGraphics(unittest.TestCase):
             self.assertEqual(team_names, expected_team_names)
             self.assertEqual(innings_scores, expected_innings_scores)
 
+    def test_get_innings_scores_dict(self):
+        match_ids = [1, 2, 3]
+        expected_team_names = "Team A\nTeam B\nTeam A\nTeam B\nTeam A\nTeam B"
+        expected_innings_scores = "100-2\n150-3\n100-2\n150-3\n100-2\n150-3"
+        
+        expected_scores = {
+            1 : { "innings_1" : ("Team A", "100-2"), "innings_2" : ("Team B", "150-3") },
+            2 : { "innings_1" : ("Team A", "100-2"), "innings_2" : ("Team B", "150-3") },
+            3 : { "innings_1" : ("Team A", "100-2"), "innings_2" : ("Team B", "150-3") }
+        }
+        
+        with patch.object(self.acc_instance, '_make_api_request') as mock_make_api_request:
+            mock_make_api_request.return_value = {
+                'match_details': [
+                    {
+                        'result': True,
+                        'innings': [
+                            {
+                                'team_batting_name': 'Team A',
+                                'team_batting_id': 1,
+                                'runs': 100,
+                                'wickets': '2'
+                            },
+                            {
+                                'team_batting_name': 'Team B',
+                                'team_batting_id': 2,
+                                'runs': 150,
+                                'wickets': '3'
+                            }
+                        ]
+                    }
+                ]
+            }
+            scores = self.acc_instance.get_innings_scores_dict(
+                match_ids)
+            self.assertEqual(scores, expected_scores)
+
+
     def test_make_sure_number_of_players_is_consistent(self):
         api_key = 'your_api_key'
         site_id = 'your_site_id'

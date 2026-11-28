@@ -86,6 +86,45 @@ class gr(pc):
 
         return '\n'.join(team_names), '\n'.join(innings_scores)
 
+
+    def get_innings_scores_dict(self, match_ids: Optional[list] = None):
+        """
+        Return team names and innings score strings for a set of matches.
+
+        Args:
+            match_ids (list, optional): Match IDs to include.
+
+        Returns:
+            dict : team names and score strings.
+
+            {
+                match_id : 
+                    {
+                        "innings_1" : ("Alleyn CC", "110-6")
+                        "innings_2" : ("Test CC", "111-4")
+                    }
+            }
+        """
+        if match_ids is None:
+            match_ids = []
+
+        result = {}
+
+        for match_id in match_ids:
+            data = self._make_api_request(
+                config.MATCH_DETAIL_URL.format(
+                    match_id=match_id, api_key=self.api_key))
+            data = data['match_details'][0]
+            if data['result']:
+                result[match_id] = {}
+                for count, innings in enumerate(data['innings']):
+                    innings_key = f"innings_{count + 1}"
+                    team = self._clean_team_name(innings['team_batting_name']).strip()
+                    wickets = '' if innings['wickets'] == '10' else '-' + innings['wickets']
+                    result[match_id][innings_key] = (team, f"{innings['runs']}{wickets}")
+        
+        return result
+
     # ------------------------------------------------------------------
     # Individual performances graphic
     # ------------------------------------------------------------------
